@@ -1,12 +1,21 @@
 import React from 'react';
+import { useEffect, useState } from 'react';
+//import PhotoList from './PhotoList';
 
 export default function Footer(){
-    return (
-        <div className="Footer">
-            <h1>임시메인화면입니다</h1>
-            <div>
-                <p>출력위치</p>
-            </div>
-        </div>
+    const [sample, setSample] = useState(null);
+
+  useEffect(()=> {
+  
+    fetch("https://url")
+    .then((response) => response.json())
+    .then(data => setSample(data))
+    .catch(error => console.log('error'.error))  
+  }, [])
+  return (
+    <div className='sample'>
+      <h1>Sample입니다</h1>
+      <div>{sample}</div>
+    </div>
     );
 }
