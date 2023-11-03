@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import reportWebVitals from './reportWebVitals';
-//import Routing from './Routing';
+import Routing from './Routing';
 import Header from './component/Header';
 import Footer from './component/Footer';
 
