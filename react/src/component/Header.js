@@ -1,11 +1,12 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Header = () =>{
     return (
         <div className="header" style={ {backgroundColor: "#FF0000"} } >
             <nav className="wrapper">
                 <div>
-                    <h4>H&M</h4>
+                    <Link className='Logo' to={'/'}>H&M</Link>
                 </div>
             </nav>
             <div className="menu">

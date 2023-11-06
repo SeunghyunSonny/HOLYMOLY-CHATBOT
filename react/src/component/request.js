@@ -1,21 +1,26 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import Header from './Header';
 import React from 'react';
-import { useEffect, useState } from 'react';
-//import PhotoList from './PhotoList';
+import Footer from './Footer';
 
-export default function Footer(){
-    const [sample, setSample] = useState(null);
+function Request (){
+    const [posts, setPosts] = useState([]);
 
-  useEffect(()=> {
-  
-    fetch("https://url")
-    .then((response) => response.json())
-    .then(data => setSample(data))
-    .catch(error => console.log('error'.error))  
-  }, [])
-  return (
-    <div className='sample'>
-      <h1>Sample입니다</h1>
-      <div>{sample}</div>
-    </div>
-    );
+    useEffect(()=>{
+      axios.get('https://jsonplaceholder.typicode.com/posts')
+            .then(response=>setPosts(response.data))
+          }
+      ,[]);
+
+    return(
+      <div>
+        <div><Header/></div>
+        <div>{posts.length}</div>
+        <div><Footer/></div>
+      </div>
+    )
+
 }
+
+export default Request;
