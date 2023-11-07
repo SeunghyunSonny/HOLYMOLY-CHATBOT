@@ -157,3 +157,4 @@ def timed(func):
             timer.log(func.__qualname__)
             return result
         return sync_wrapper
+
