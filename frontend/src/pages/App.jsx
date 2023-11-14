@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import ButtonGroup from "@mui/material/Button";
-import useStyles from "./styles/styles";
+import useStyles from "../styles/styles";
 
 function App() {
 	const { classes } = useStyles();
