@@ -7,8 +7,8 @@ from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic.dataclasses import dataclass
 from starlette.websockets import WebSocket, WebSocketState
 from sqlalchemy.orm import Session
-from realtime_ai_character.models.interaction import Interaction
-from realtime_ai_character.logger import get_logger
+from models.interaction import Interaction
+from logger import get_logger
 
 
 @dataclass
@@ -157,4 +157,3 @@ def timed(func):
             timer.log(func.__qualname__)
             return result
         return sync_wrapper
-

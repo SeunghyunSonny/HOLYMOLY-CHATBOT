@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from realtime_ai_character.utils import timed
+from utils import timed
 
 
-class TextToSpeech(ABC):
+class SpeechToText(ABC):
     @abstractmethod
     @timed
-    async def stream(self, *args, **kwargs):
-        pass
-
-    async def generate_audio(self,  *args, **kwargs):
+    def transcribe(
+        self, audio_bytes, platform="web", prompt="", language="en-US", suppress_tokens=[-1]
+    ) -> str:
+        # platform: 'web' | 'mobile' | 'terminal'
         pass

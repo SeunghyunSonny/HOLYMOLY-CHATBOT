@@ -5,24 +5,26 @@ from langchain.llms import HuggingFaceHub
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.schema import BaseMessage, HumanMessage
 from database.chroma import get_chroma
-from llm.base import (
-    AsyncCallbackAudioHandler,
+from models import (
+    #AsyncCallbackAudioHandler,
     AsyncCallbackTextHandler,
     LLM,
-    SearchAgent,
+
 )
+
+#혹시 몰라서 제작을 넣어봄
 from logger import get_logger
 from utils import Character, timed
-
+#import llama2wrapper
 # 로거 인스턴스를 생성합니다.
 logger = get_logger(__name__)
 
-#from llama2_wrapper import LLAMA2_WRAPPER
 
-#llama2_wrapper = LLAMA2_WRAPPER(
-#	model_path = "./beomi/llama-2-ko-7b",
-#  backend_type = "transformers",
-#  load_in_8bit = True
+
+#llama2-wrapper = LLAMA2_WRAPPER(
+#model_path = "./beomi/llama-2-ko-7b",
+#backend_type = "transformers",
+#load_in_8bit = True
 #)
 
 
@@ -45,7 +47,6 @@ class LocalLlm(LLM):
         # 추가 설정을 수행합니다.
         self.config = {"model": "local_trained_model", "temperature": 0.5, "streaming": True}
         self.db = get_chroma()  # 데이터베이스 연결을 초기화합니다.
-        self.search_agent = SearchAgent()  # 검색 에이전트를 초기화합니다.
 
     def get_config(self):
         # 현재 설정을 반환합니다.
@@ -58,7 +59,7 @@ class LocalLlm(LLM):
         user_input: str,
         user_input_template: str,
         callback: AsyncCallbackTextHandler,
-        audioCallback: AsyncCallbackAudioHandler,
+        #audioCallback: AsyncCallbackAudioHandler,
         character: Character,
         metadata: dict = None,
         *args,
@@ -74,7 +75,7 @@ class LocalLlm(LLM):
             # 모델을 사용하여 응답을 생성합니다.
             response = await self.llm.agenerate(
                 [history],
-                callbacks=[callback, audioCallback, StreamingStdOutCallbackHandler()],
+                callbacks=[callback, StreamingStdOutCallbackHandler()],#AUDIOCALLBACK삽입
                 metadata=metadata,
             )
 

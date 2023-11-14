@@ -1,5 +1,4 @@
 import os
-from dotenv import load_dotenv
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from logger import get_logger
@@ -9,7 +8,6 @@ from langchain.vectorstores import FAISS
 from langchain.document_loaders import TextLoader
 
 
-load_dotenv()
 logger = get_logger(__name__)
 
 embedding = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))

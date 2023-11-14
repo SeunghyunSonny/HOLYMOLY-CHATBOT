@@ -1,3 +1,37 @@
+import os
+
+
+
+def get_text_to_speech(tts: str = None) -> TextToSpeech:
+    if not tts:
+        tts = os.getenv('TEXT_TO_SPEECH_USE', 'ELEVEN_LABS')
+    if tts == 'ELEVEN_LABS':
+        from text_to_speech.elevenlabs import ElevenLabs
+        ElevenLabs.initialize()
+        return ElevenLabs.get_instance()
+    elif tts == 'GOOGLE_TTS':
+        from google_cloud_tts import GoogleCloudTTS
+        GoogleCloudTTS.initialize()
+        return GoogleCloudTTS.get_instance()
+
+    else:
+        raise NotImplementedError(f'Unknown text to speech engine: {tts}')
+
+from abc import ABC, abstractmethod
+from realtime_ai_character.utils import timed
+
+
+class TextToSpeech(ABC):
+    @abstractmethod
+    @timed
+    async def stream(self, *args, **kwargs):
+        pass
+
+    async def generate_audio(self,  *args, **kwargs):
+        pass
+
+
+
 import asyncio
 import os
 import types
@@ -5,7 +39,6 @@ import httpx
 
 from logger import get_logger
 from utils import Singleton, timed
-from audio.text_to_speech.base import TextToSpeech
 
 logger = get_logger(__name__)
 
@@ -21,7 +54,7 @@ config = types.SimpleNamespace(**{
     'headers': {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
-        'xi-api-key': '4569afdb563177ad678f389160b3699b'
+        'xi-api-key': os.environ['ELEVEN_LABS_API_KEY']
     },
     'data': {
         'model_id': 'eleven_monolingual_v1',
@@ -39,7 +72,7 @@ class ElevenLabs(Singleton, TextToSpeech):
         logger.info("Initializing [ElevenLabs Text To Speech] voices...")
 
     @timed
-    async def stream(self, text, websocket, tts_event: asyncio.Event, 
+    async def stream(self, text, websocket, tts_event: asyncio.Event,
                      voice_id="21m00Tcm4TlvDq8ikWAM",
                      first_sentence=False, language='en-US') -> None:
         if DEBUG:
