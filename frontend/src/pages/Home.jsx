@@ -15,19 +15,21 @@ import {
 import HomeIcon from "@mui/icons-material/Home";
 import ButtonGroup from "@mui/material/Button";
 import useStyles from "../styles/styles";
+import { Link } from "react-router-dom";
+import Login from "./Login";
 
-function App() {
+function Home() {
 	const { classes } = useStyles();
 
 	return (
 		<>
-			<CssBaseline />
+			{/*<CssBaseline />
 			<AppBar position="relative">
 				<Toolbar>
 					<HomeIcon />
 					<Typography variant="h6">HomeIcon</Typography>
 				</Toolbar>
-			</AppBar>
+			</AppBar>*/}
 			<main>
 				<div className={classes.container}>
 					<Container maxWidth="sm" style={{ marginTop: "100px" }}>
@@ -94,9 +96,14 @@ function App() {
 						</Typography>
 					</Container>
 				</div>
+				<div>
+					<Link to="/Login" element={Login}>
+						LOGIN
+					</Link>
+				</div>
 			</main>
 		</>
 	);
 }
 
-export default App;
+export default Home;
