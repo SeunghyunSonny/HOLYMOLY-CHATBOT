@@ -1,7 +1,6 @@
 import os
 from langchain.vectorstores import FAISS
 from langchain.text_splitter import CharacterTextSplitter
-from sentence_transformers import SentenceTransformer
 import numpy as np
 from logger import get_logger
 from langchain.embeddings import HuggingFaceEmbeddings
