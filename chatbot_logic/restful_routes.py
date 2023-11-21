@@ -1,33 +1,35 @@
+import httpx
+from memory import Memory
+from fastapi import Header,APIRouter, Depends, HTTPException, Request, \
+    status as http_status, UploadFile, File, Form
+from sqlalchemy import func
 import os
 import datetime
 import uuid
 import asyncio
-import httpx
-
-
-from fastapi import APIRouter, Depends, HTTPException, Request, \
-    status as http_status, UploadFile, File, Form
-
-from audio.text_to_speech import get_text_to_speech
+import boto3
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, Form, Header
+from sqlalchemy.orm import Session
 from database.connection import get_db
-
-
-from requests import Session
-from sqlalchemy import func
-from chatbot_logic.feedback import Feedback, FeedbackRequest
+from audio.text_to_speech import get_text_to_speech
 from chatbot_logic.interaction import Interaction
-router = APIRouter()
 
+restful_router = APIRouter()
 MAX_FILE_UPLOADS = 5
 
+# 토큰 헤더 검증
+async def get_token_header(x_token: str = Header(...)):
+    if x_token != "fake-super-secret-token":
+        raise HTTPException(status_code=400, detail="X-Token header invalid")
 
-@router.get("/status")
+@restful_router.get("/status")
 async def status():
-    return {"status": "ok", "message": "RealChar is running smoothly!"}
+    return {"status": "ok"}
 
 
-@router.get("/characters")
-async def characters(user=Depends()):
+"""
+@restful_router.get("/characters")
+async def characters(user=Depends(get_token_header)):
     def get_image_url(character):
         gcs_path = 'https://storage.googleapis.com/assistly'
         if character.data and 'avatar_filename' in character.data:
@@ -50,40 +52,10 @@ async def characters(user=Depends()):
         'is_author': character.author_id == uid,
     } for character in catalog.characters.values()
         if character.author_id == uid or character.visibility == 'public']
-
-
-@router.get("/configs")
-async def configs():
-    return {
-        'llms': ['meta-llama/Llama-2-70b-chat-hf'],
-    }
-
-
-@router.get("/session_history")
-async def get_session_history(session_id: str, db: Session = Depends(get_db)):
-    # Read session history from the database.
-    interactions = await asyncio.to_thread(
-        db.query(Interaction).filter(Interaction.session_id == session_id).all)
-    # return interactions in json format
-    interactions_json = [interaction.to_dict() for interaction in interactions]
-    return interactions_json
-
-
-@router.post("/feedback")
-async def post_feedback(feedback_request: FeedbackRequest,
-                        user=Depends(),
-                        db: Session = Depends(get_db)):
-    feedback = Feedback(**feedback_request.dict())
-    feedback.user_id = user['uid']
-    feedback.created_at = datetime.datetime.now()
-    await asyncio.to_thread(feedback.save, db)
-
-
-
-
-
-@router.post("/generate_audio")
-async def generate_audio(text: str, tts: str = None, user=Depends()):
+    # 캐릭터 목록 조회 및 반환 로직
+"""
+@restful_router.get("/generate_audio")
+async def generate_audio(text: str, tts: str = None, user=Depends(get_token_header)):
     if not isinstance(text, str) or text == '':
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
@@ -96,18 +68,19 @@ async def generate_audio(text: str, tts: str = None, user=Depends()):
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail='Text to speech engine not found',
         )
+
     audio_bytes = await tts_service.generate_audio(text)
-    # save audio to a file on GCS
-    storage_client = storage.Client()
-    bucket_name = os.environ.get('GCP_STORAGE_BUCKET_NAME')
+
+    # AWS S3 설정
+    s3_client = boto3.client('s3')
+    bucket_name = os.environ.get('AWS_S3_BUCKET_NAME')
     if not bucket_name:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='GCP_STORAGE_BUCKET_NAME is not set',
+            detail='AWS_S3_BUCKET_NAME is not set',
         )
-    bucket = storage_client.bucket(bucket_name)
 
-    # Create a new filename with a timestamp and a random uuid to avoid duplicate filenames
+    # 파일 이름 생성
     file_extension = '.webm' if tts == 'UNREAL_SPEECH' else '.mp3'
     new_filename = (
         f"user_upload/{user['uid']}/"
@@ -115,39 +88,46 @@ async def generate_audio(text: str, tts: str = None, user=Depends()):
         f"{uuid.uuid4()}{file_extension}"
     )
 
-    blob = bucket.blob(new_filename)
-
-    await asyncio.to_thread(blob.upload_from_string, audio_bytes)
+    # AWS S3에 파일 저장
+    try:
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=new_filename,
+            Body=audio_bytes,
+            ContentType='audio/mpeg'
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
 
     return {
         "filename": new_filename,
         "content-type": "audio/mpeg"
     }
+    # 텍스트를 오디오로 변환하고 AWS S3에 저장하는 로직
 
-
-@router.post("/clone_voice")
-async def clone_voice(
-        files: list[UploadFile] = Form(...),
-        user=Depends()):
+@restful_router.get("/clone_voice")
+async def clone_voice(files: list[UploadFile] = Form(...), user=Depends(get_token_header)):
     if len(files) > MAX_FILE_UPLOADS:
         raise HTTPException(
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=f'Number of files exceeds the limit ({MAX_FILE_UPLOADS})',
         )
 
-    storage_client = storage.Client()
-    bucket_name = os.environ.get('GCP_STORAGE_BUCKET_NAME')
+    s3_client = boto3.client('s3')
+    bucket_name = os.environ.get('AWS_S3_BUCKET_NAME')
     if not bucket_name:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='GCP_STORAGE_BUCKET_NAME is not set',
+            detail='AWS_S3_BUCKET_NAME is not set',
         )
 
-    bucket = storage_client.bucket(bucket_name)
     voice_request_id = str(uuid.uuid4().hex)
+    uploaded_files = []
 
     for file in files:
-        # Create a new filename with a timestamp and a random uuid to avoid duplicate filenames
         file_extension = os.path.splitext(file.filename)[1]
         new_filename = (
             f"user_upload/{user['uid']}/{voice_request_id}/"
@@ -155,37 +135,37 @@ async def clone_voice(
             f"{uuid.uuid4()}{file_extension}"
         )
 
-        blob = bucket.blob(new_filename)
-
         contents = await file.read()
 
-        await asyncio.to_thread(blob.upload_from_string, contents)
+        # AWS S3에 파일 저장
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=new_filename,
+            Body=contents
+        )
+        uploaded_files.append((file.filename, (new_filename, contents, 'application/octet-stream')))
 
-    # Construct the data for the API request
-    # TODO: support more voice cloning services.
+    # API 요청을 위한 데이터 구성
     data = {
         "name": user['uid'] + "_" + voice_request_id,
     }
-
-    files = [("files", (file.filename, file.file)) for file in files]
 
     headers = {
         "xi-api-key": os.getenv("ELEVEN_LABS_API_KEY"),
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post("https://api.elevenlabs.io/v1/voices/add",
-                                     headers=headers, data=data, files=files)
+        response = await client.get("https://api.elevenlabs.io/v1/voices/add",
+                                    headers=headers, data=data, files=uploaded_files)
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
     return response.json()
-
-
-
-@router.get("/conversations", response_model=list[dict])
-async def get_recent_conversations(user=Depends(), db: Session = Depends(get_db)):
+    # 오디오 파일을 받아 AWS S3에 저장하는 로직
+"""
+@restful_router.get("/conversations")
+async def get_recent_conversations(user=Depends(get_token_header), db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
@@ -218,9 +198,11 @@ async def get_recent_conversations(user=Depends(), db: Session = Depends(get_db)
         "timestamp": r[2]
     } for r in results]
 
-
-@router.get("/memory", response_model=list[dict])
-async def get_memory(user=Depends(), db: Session = Depends(get_db)):
+    # 최근 대화 목록을 조회하여 반환하는 로직
+"""
+"""
+@restful_router.get("/memory")
+async def get_memory(user=Depends(get_token_header), db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
@@ -237,11 +219,12 @@ async def get_memory(user=Depends(), db: Session = Depends(get_db)):
         "created_at": memory.created_at,
         "updated_at": memory.updated_at,
     } for memory in memories]
+    # 메모리 정보 조회 및 반환 로직
+"""
 
-
-@router.post("/delete_memory")
-async def delete_memory(memory_id: str, user=Depends(),
-                        db: Session = Depends(get_db)):
+"""
+@restful_router.get("/delete_memory")
+async def delete_memory(memory_id: str, user=Depends(get_token_header), db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(
             status_code=http_status.HTTP_401_UNAUTHORIZED,
@@ -263,5 +246,5 @@ async def delete_memory(memory_id: str, user=Depends(),
         )
 
     db.delete(memories[0])
-    db.commit()
-
+    await asyncio.to_thread(db.commit)
+"""
