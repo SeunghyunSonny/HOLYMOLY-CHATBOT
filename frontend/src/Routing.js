@@ -3,8 +3,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Main from "./pages/Main";
-
-//import Signup from './pages/signup/Signup'
+import FAQ from "./pages/FAQ";
+import Contactus from "./pages/Contactus";
 
 function Routing() {
 	return (
@@ -14,6 +14,8 @@ function Routing() {
 					<Route path="/" element={<Home />}></Route>
 					<Route path="/login" element={<Login />}></Route>
 					<Route path="/main" element={<Main />}></Route>
+					<Route path="/faq" element={<FAQ />}></Route>
+					<Route path="/contactus" element={<Contactus />}></Route>
 				</Routes>
 			</BrowserRouter>
 		</div>

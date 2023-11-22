@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Nav from "../components/Nav";
 
 const Chatbot = () => {
 	const [input, setInput] = useState("");
@@ -31,6 +32,7 @@ const Chatbot = () => {
 
 	return (
 		<div>
+			<Nav />
 			<div>
 				{responses.map((res, index) => (
 					<div key={index}>
