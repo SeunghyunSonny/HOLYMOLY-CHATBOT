@@ -1,12 +1,7 @@
-import { makeStyles } from "tss-react/mui";
+import React from "react";
 
-const useStyles = makeStyles()((theme) => {
-	return {
-		container: {
-			backgroundColor: theme.palette.background.paper,
-			padding: theme.spacing(8, 0, 6),
-		},
-	};
-});
+function styles() {
+	return <div>styles</div>;
+}
 
-export default useStyles;
+export default styles;

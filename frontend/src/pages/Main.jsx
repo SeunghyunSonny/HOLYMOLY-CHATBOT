@@ -31,10 +31,9 @@ function Main() {
 
 	const sendValueToServer = async (value) => {
 		try {
-			const response = await axios.post(
-				"https://your-server.com/api/endpoint",
-				{ value: value }
-			);
+			const response = await axios.post("https://43.201.0.19:8000/chat", {
+				value: value,
+			});
 			return response.data;
 		} catch (error) {
 			console.error("서버로 데이터를 보내는데 실패했습니다:", error);
