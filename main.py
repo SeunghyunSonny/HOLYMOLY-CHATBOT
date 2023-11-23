@@ -1,75 +1,36 @@
-import os
-import warnings
-
-from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
-
-from realtime_ai_character.audio.speech_to_text import get_speech_to_text
-from realtime_ai_character.audio.text_to_speech import get_text_to_speech
-from realtime_ai_character.character_catalog.catalog_manager import CatalogManager
-from realtime_ai_character.memory.memory_manager import MemoryManager
-from realtime_ai_character.restful_routes import router as restful_router
-from realtime_ai_character.utils import ConnectionManager
-from realtime_ai_character.websocket_routes import router as websocket_router
-
-load_dotenv()
+from fastapi import FastAPI, WebSocket
+from typing import List, Union
+from llm import LocalLlm, Character, BaseMessage, HumanMessage  # 적절한 모듈 경로로 변경하세요
+import asyncio
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
+@app.websocket("/chat")
+async def chat_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    llm = LocalLlm()  # LocalLlm 인스턴스 생성
+    history = []  # 대화 기록을 저장하는 리스트
 
+    try:
+        while True:
+            user_input = await websocket.receive_text()
+            user_input_template = "{query}"  # 사용자 입력 템플릿 (필요에 따라 수정)
 
-    # Change to domains if you deploy this to production
-    allow_origins=['*'],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+            # 캐릭터 객체 생성 (가정)
+            character = Character(name="Chatbot", desc="AI Chatbot")
 
-app.include_router(restful_router)
-app.include_router(websocket_router)
+            # LocalLlm의 achat 메소드를 사용하여 대화 생성
+            response = await llm.achat(
+                history,
+                user_input,
+                user_input_template,
+                callback=None,  # 적절한 콜백 함수로 대체
+                character=character
+            )
 
-web_build_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                              '..', 'client', 'web', 'build')
+            # 응답을 클라이언트에게 보냄
+            await websocket.send_text(response)
 
-if os.path.exists(web_build_path):
-    app.mount("/static/", 
-              StaticFiles(directory=os.path.join(web_build_path, 'static')), 
-              name="static")
-
-    @app.get("/", response_class=FileResponse)
-    async def read_index():
-        return FileResponse(os.path.join(web_build_path, 'index.html'))
-                            
-    @app.get("/{catchall:path}", response_class=FileResponse)
-    def read_static(request: Request):
-        path = request.path_params["catchall"]
-        file = os.path.join(web_build_path, path)
-
-        if os.path.exists(file):
-            return FileResponse(file)
-
-        return RedirectResponse("/")
-else:
-    # If the web app is not built, prompt the user to build it
-    static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-    app.mount("/static/", StaticFiles(directory=static_path), name="static")
-
-    @app.get("/", response_class=FileResponse)
-    async def read_index():
-        return FileResponse(os.path.join(static_path, '404.html'))
-
-# initializations
-overwrite_chroma = os.getenv("OVERWRITE_CHROMA", 'True').lower() in ('true', '1')
-CatalogManager.initialize(overwrite=overwrite_chroma)
-ConnectionManager.initialize()
-MemoryManager.initialize()
-get_text_to_speech()
-get_speech_to_text()
-
-# suppress deprecation warnings
-warnings.filterwarnings("ignore", module="whisper")
+    except Exception as e:
+        await websocket.close(code=1000)
+        print(f"WebSocket connection closed with exception: {e}")
