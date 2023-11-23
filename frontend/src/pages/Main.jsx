@@ -1,52 +1,84 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useSpeechRecognition } from "react-speech-kit";
+import { getSpeech } from "../components/getSpeech";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
 
-const Chatbot = () => {
-	const [input, setInput] = useState("");
-	const [responses, setResponses] = useState([]);
+function Main() {
+	//
+	useEffect(() => {
+		window.speechSynthesis.getVoices();
+	}, []);
 
-	const handleInputChange = (e) => {
-		setInput(e.target.value);
+	const [value, setValue] = useState("");
+	const [messages, setMessages] = useState([]);
+
+	const startListeningInKorean = () => listen({ lang: "ko-KR" });
+
+	const { listen, listening, stop } = useSpeechRecognition({
+		onResult: (result) => {
+			setValue(result);
+		},
+	});
+	const stopListening = () => {
+		if (value) {
+			handleResponse(value);
+			addMessage(value, "user");
+		}
+		stop();
 	};
 
-	const handleSubmit = async () => {
-		if (!input.trim()) return;
-
+	const sendValueToServer = async (value) => {
 		try {
-			// axios를 사용하여 서버에 요청을 보냅니다.
-			const response = await axios.post("http://localhost:8000/chat/", {
-				message: input,
-			});
-
-			// 챗봇의 응답을 상태에 추가
-			setResponses([
-				...responses,
-				{ query: input, response: response.data },
-			]);
-			setInput(""); // 입력 필드 초기화
+			const response = await axios.post(
+				"https://your-server.com/api/endpoint",
+				{ value: value }
+			);
+			return response.data;
 		} catch (error) {
-			console.error("Error sending message:", error);
+			console.error("서버로 데이터를 보내는데 실패했습니다:", error);
+			return null;
 		}
 	};
 
+	async function handleResponse(value) {
+		const serverResponse = await sendValueToServer(value);
+		if (serverResponse) {
+			getSpeech(serverResponse);
+			addMessage(serverResponse, "server");
+		}
+	}
+
+	const addMessage = (text, sender) => {
+		setMessages((prevMessages) => [...prevMessages, { text, sender }]);
+	};
+
 	return (
-		<div>
+		<>
 			<Nav />
 			<div>
-				{responses.map((res, index) => (
-					<div key={index}>
-						<p>User: {res.query}</p>
-						<p>Bot: {res.response}</p>
-					</div>
-				))}
-			</div>
-			<input type="text" value={input} onChange={handleInputChange} />
-			<button onClick={handleSubmit}>Send</button>
-			<Footer />
-		</div>
-	);
-};
+				<h2>holy와 대화하기</h2>
+				<div>{value}</div>
+				<p>마이크감지: {listening ? "작동 o " : "작동 x "}</p>
+				<button onClick={startListeningInKorean}>말하기</button>
+				<button onClick={stopListening}>중지</button>
+				{listening && <div>듣는중...</div>}
 
-export default Chatbot;
+				<div className="chat-box">
+					{messages.map((message, index) => (
+						<div
+							key={index}
+							className={`message ${message.sender}`}
+						>
+							{message.text}
+						</div>
+					))}
+				</div>
+			</div>
+			<Footer />
+		</>
+	);
+}
+
+export default Main;

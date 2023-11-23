@@ -6,6 +6,7 @@ import Main from "./pages/Main";
 import FAQ from "./pages/FAQ";
 import Contactus from "./pages/Contactus";
 import Intro from "./pages/Intro";
+import Chat from "./pages/Chat";
 function Routing() {
 	return (
 		<div className="App">
@@ -17,6 +18,7 @@ function Routing() {
 					<Route path="/faq" element={<FAQ />}></Route>
 					<Route path="/contactus" element={<Contactus />}></Route>
 					<Route path="/intro" element={<Intro />}></Route>
+					<Route path="/chat" element={<Chat />}></Route>
 				</Routes>
 			</BrowserRouter>
 		</div>

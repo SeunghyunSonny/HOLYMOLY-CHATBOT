@@ -18,7 +18,7 @@ function Home() {
 					<Container
 						maxWidth="free"
 						style={{
-							background: "#e3b217",
+							background: "#ffdf00",
 						}}
 					>
 						<Typography
