@@ -11,7 +11,7 @@ import { useLocation, Link } from "react-router-dom";
 import logo from "../images/logo.png";
 import Main from "../pages/Main";
 import FAQ from "../pages/FAQ";
-import Intro from "../pages/Intro";
+import holymoly from "../pages/Holymoly";
 import Contactus from "../pages/Contactus";
 import Login from "../pages/Login";
 import { Grid } from "@mui/material";
@@ -94,12 +94,12 @@ export default function HideAppBar(props) {
 								<Grid item>
 									<Button
 										variant="contained"
-										style={getStyle("/main")}
+										style={getStyle("/holymoly")}
 									>
 										<Link
 											href="#"
 											variant="body2"
-											to="/main"
+											to="/holymoly"
 											element={Main}
 											style={{
 												textDecoration: "none",
@@ -145,25 +145,6 @@ export default function HideAppBar(props) {
 											}}
 										>
 											{"Contact us"}
-										</Link>
-									</Button>
-								</Grid>
-								<Grid item>
-									<Button
-										variant="contained"
-										style={getStyle("/intro")}
-									>
-										<Link
-											href="#"
-											variant="body2"
-											to="/intro"
-											element={Intro}
-											style={{
-												textDecoration: "none",
-												color: "black",
-											}}
-										>
-											{"Intro"}
 										</Link>
 									</Button>
 								</Grid>

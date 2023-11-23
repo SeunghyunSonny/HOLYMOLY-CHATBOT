@@ -1,19 +1,21 @@
 import * as React from "react";
 import { Typography, Container } from "@mui/material";
-import useStyles from "../styles/styles";
-import moly from "/Users/jj/Documents/GitHub/HOLYMOLY-CHATBOT/frontend/src/images/moly.png";
+import main_moly from "/Users/jj/Documents/GitHub/HOLYMOLY-CHATBOT/frontend/src/images/main_moly.png";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
 function Home() {
-	const { classes } = useStyles();
-
 	return (
 		<>
 			<Nav />
 			<main>
-				<div className={classes.container}>
+				<div>
 					<Container align="center">
-						<img src={moly} width={860} height={673} alt="moly" />
+						<img
+							src={main_moly}
+							width={860}
+							height={673}
+							alt="moly"
+						/>
 					</Container>
 					<Container
 						maxWidth="free"

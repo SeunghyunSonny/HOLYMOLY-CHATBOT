@@ -5,8 +5,8 @@ import Login from "./pages/Login";
 import Main from "./pages/Main";
 import FAQ from "./pages/FAQ";
 import Contactus from "./pages/Contactus";
-import Intro from "./pages/Intro";
-import Chat from "./pages/Chat";
+import Holymoly from "./pages/Holymoly";
+import Error from "./pages/Error";
 function Routing() {
 	return (
 		<div className="App">
@@ -17,8 +17,8 @@ function Routing() {
 					<Route path="/main" element={<Main />}></Route>
 					<Route path="/faq" element={<FAQ />}></Route>
 					<Route path="/contactus" element={<Contactus />}></Route>
-					<Route path="/intro" element={<Intro />}></Route>
-					<Route path="/chat" element={<Chat />}></Route>
+					<Route path="/holymoly" element={<Holymoly />}></Route>
+					<Route path="/error" element={<Error />}></Route>
 				</Routes>
 			</BrowserRouter>
 		</div>
