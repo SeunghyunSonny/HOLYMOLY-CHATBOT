@@ -1,7 +1,7 @@
 import datetime
 
 from pydantic import BaseModel
-from realtime_ai_character.database.base import Base
+from database.base import Base
 from sqlalchemy import Column, String, DateTime, Unicode
 from sqlalchemy.inspection import inspect
 from typing import Optional

@@ -6,16 +6,14 @@ from pathlib import Path
 from contextlib import ExitStack
 
 from dotenv import load_dotenv
-from firebase_admin import auth
 from llama_index import SimpleDirectoryReader
 from langchain.text_splitter import CharacterTextSplitter
 
-from realtime_ai_character.logger import get_logger
-from realtime_ai_character.utils import Singleton, Character
-from realtime_ai_character.database.chroma import get_chroma
-from readerwriterlock import rwlock
-from realtime_ai_character.database.connection import get_db
-from realtime_ai_character.models.character import Character as CharacterModel
+from logger import get_logger
+from utils import Singleton, Character
+from database.faiss import get_faiss
+from database.connection import get_db
+
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -24,22 +22,21 @@ logger = get_logger(__name__)
 class CatalogManager(Singleton):
     def __init__(self, overwrite=True):
         super().__init__()
-        self.db = get_chroma()
+        self.db = get_faiss()
         self.sql_db = next(get_db())
         self.sql_load_interval = 30
-        self.sql_load_lock = rwlock.RWLockFair()
 
         if overwrite:
-            logger.info('Overwriting existing data in the chroma.')
+            logger.info('Overwriting existing data in the faiss.')
             self.db.delete_collection()
-            self.db = get_chroma()
+            self.db = get_faiss()
 
         self.characters = {}
         self.author_name_cache = {}
         self.load_characters_from_community(overwrite)
         self.load_characters(overwrite)
         if overwrite:
-            logger.info('Persisting data in the chroma.')
+            logger.info('Persisting data in the faiss.')
             self.db.persist()
         logger.info(
             f"Total document load: {self.db._client.get_collection('llm').count()}")
@@ -92,9 +89,9 @@ class CatalogManager(Singleton):
     def load_characters(self, overwrite):
         """
         Load characters from the character_catalog directory. Use /data to create
-        documents and add them to the chroma.
+        documents and add them to the faiss.
 
-        :overwrite: if True, overwrite existing data in the chroma.
+        :overwrite: if True, overwrite existing data in the faiss.
         """
         path = Path(__file__).parent
         excluded_dirs = {'__pycache__', 'archive', 'community'}
@@ -110,37 +107,7 @@ class CatalogManager(Singleton):
         logger.info(
             f'Loaded {len(self.characters)} characters: IDs {list(self.characters.keys())}')
 
-    def load_characters_from_community(self, overwrite):
-        path = Path(__file__).parent / 'community'
-        excluded_dirs = {'__pycache__', 'archive'}
 
-        directories = [d for d in path.iterdir() if d.is_dir()
-                       and d.name not in excluded_dirs]
-        for directory in directories:
-            with ExitStack() as stack:
-                f_yaml = stack.enter_context(open(directory / 'config.yaml'))
-                yaml_content = yaml.safe_load(f_yaml)
-            character_id = yaml_content['character_id']
-            character_name = yaml_content['character_name']
-            self.characters[character_id] = Character(
-                character_id=character_id,
-                name=character_name,
-                llm_system_prompt=yaml_content["system"],
-                llm_user_prompt=yaml_content["user"],
-                voice_id=str(yaml_content["voice_id"]),
-                source='community',
-                location='repo',
-                author_name=yaml_content["author_name"],
-                visibility=yaml_content["visibility"],
-                tts=yaml_content["text_to_speech_use"]
-            )
-
-            if "avatar_id" in yaml_content:
-                self.characters[character_id].avatar_id = yaml_content["avatar_id"]
-
-            if overwrite:
-                self.load_data(character_name, directory / 'data')
-                logger.info('Loaded data for character: ' + character_name)
 
     def load_data(self, character_name: str, data_path: str):
         loader = SimpleDirectoryReader(Path(data_path))
@@ -160,7 +127,7 @@ class CatalogManager(Singleton):
 
     def load_character_from_sql_database(self):
         logger.info('Started loading characters from SQL database')
-        character_models = self.sql_db.query(CharacterModel).all()
+        character_models = self.sql_db.query().all()
 
         with self.sql_load_lock.gen_wlock():
             # delete all characters with location == 'database'
@@ -173,13 +140,6 @@ class CatalogManager(Singleton):
 
             # add all characters from sql database
             for character_model in character_models:
-                if character_model.author_id not in self.author_name_cache:
-                    author_name = auth.get_user(
-                        character_model.author_id).display_name if os.getenv(
-                            'USE_AUTH', '') else "anonymous author"
-                    self.author_name_cache[character_model.author_id] = author_name
-                else:
-                    author_name = self.author_name_cache[character_model.author_id]
                 character = Character(
                     character_id=character_model.id,
                     name=character_model.name,
@@ -189,7 +149,6 @@ class CatalogManager(Singleton):
                     source='community',
                     location='database',
                     author_id=character_model.author_id,
-                    author_name=author_name,
                     visibility=character_model.visibility,
                     tts=character_model.tts,
                     data=character_model.data,

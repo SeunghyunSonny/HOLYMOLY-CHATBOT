@@ -7,7 +7,7 @@ from langchain.schema import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from pydantic.dataclasses import dataclass
 from starlette.websockets import WebSocket, WebSocketState
 from sqlalchemy.orm import Session
-from models.interaction import Interaction
+from chatbot_logic.interaction import Interaction
 from logger import get_logger
 
 

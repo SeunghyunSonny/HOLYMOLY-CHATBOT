@@ -5,6 +5,11 @@ import asyncio
 
 app = FastAPI()
 
+@app.get("/stat")
+async def root():
+    return {"message": "Hello World"}
+
+
 @app.websocket("/chat")
 async def chat_endpoint(websocket: WebSocket):
     await websocket.accept()

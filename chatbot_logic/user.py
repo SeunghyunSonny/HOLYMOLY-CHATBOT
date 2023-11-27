@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String
-from realtime_ai_character.database.base import Base
+from database.base import Base
 
 
 class User(Base):

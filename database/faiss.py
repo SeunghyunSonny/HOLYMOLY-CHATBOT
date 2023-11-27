@@ -1,37 +1,42 @@
 import os
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
-from logger import get_logger
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain.document_loaders import TextLoader
-
+from langchain.text_splitter import CharacterTextSplitter
+from sentence_transformers import SentenceTransformer
+import numpy as np
+from logger import get_logger
+from langchain.embeddings import HuggingFaceEmbeddings
 
 logger = get_logger(__name__)
 
-embedding = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
-if os.getenv('OPENAI_API_TYPE') == 'azure':
-    embedding = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"), deployment=os.getenv(
-        "OPENAI_API_EMBEDDING_DEPLOYMENT_NAME", "text-embedding-ada-002"), chunk_size=1)
+# Initialize the Sentence Transformer Model
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
+with open(r'./database/processed_korquad.txt', 'r', encoding='utf-8') as file:
+    content = file.read()
+
+# Split the content into chunks and embed
+query_result = embeddings.embed_query(content)
 
 
-# 파이스로 집어넣는거 새로 작업중
-#loader = TextLoader("../../../extras/modules/state_of_the_union.txt")
-#documents = loader.load()
-#text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-#docs = text_splitter.split_documents(documents)
+faissdb = FAISS.from_texts(content, embeddings)
+query = "what is the question?"
+docs_and_scores = faissdb.similarity_search_with_score(query)
+docs_query = faissdb.similarity_search(query)
+embedding_vector = embeddings.embed_query(query)
+docs_and_scores = faissdb.similarity_search_by_vector(embedding_vector)
+faissdb.save_local("faiss_index")
 
-###########################################
-#db = FAISS.from_documents(docs, embeddings)
-#query = "What did the president say about Ketanji Brown Jackson"
-#docs = db.similarity_search(query)
-################
+faissdb = FAISS.from_texts(content, embeddings, "faiss index")
 
-def get_chroma():
-    chroma = Chroma(
-        collection_name='llm',
-        embedding_function=embedding,
-        persist_directory='./chroma.db'
-    )
-    return chroma
+# Concatenate encoded_chunk
+# Create a FAISS index
+ # Add document encoded_chunk to the index
+
+# Assuming you need a function to initialize the FAISS index
+def get_faiss():
+        faissdb = FAISS(
+            collection_name='llm',
+            embedding_function=embeddings,
+            persist_directory='./faiss.db'
+        )
+        return faissdb
