@@ -46,7 +46,7 @@ const Inputarea = styled.div`
 display: flex;
   margin-top: auto; /* 하단에 고정 */
   width: 100%
-  padding: 5px
+  padding: 10px
 }`;
 
 const InputField = styled.div`
