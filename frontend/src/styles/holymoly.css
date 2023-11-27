@@ -1,0 +1,42 @@
+.intro {
+	text-align: center;
+}
+.body {
+	display: flex;
+	flex-direction: row;
+	background-color: #141414;
+}
+.section {
+	flex: 1; /* formerly flex: 1 0 auto; */
+	flex-direction: column;
+	background-color: #191919;
+	padding: 5px;
+	margin: 5px;
+	min-height: 0; /* new */
+	display: flex;
+}
+.buttondiv {
+	height: 10%;
+	text-align: center;
+	background-color: #191919;
+}
+.button {
+	background-color: yellow;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	height: 80%;
+	width: 80%;
+	font-size: larger;
+	font-weight: bold;
+}
+.imgdiv {
+	flex: 1; /* formerly flex: 1 0 auto; */
+	padding: 5px;
+	margin: 5px;
+	min-height: 0; /* new */
+}
+.img {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
