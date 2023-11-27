@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Typography, Container } from "@mui/material";
-import main_moly from "/Users/jj/Documents/GitHub/HOLYMOLY-CHATBOT/frontend/src/images/main_moly.png";
+import main_moly from "../images/main_moly.png";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
 function Home() {
