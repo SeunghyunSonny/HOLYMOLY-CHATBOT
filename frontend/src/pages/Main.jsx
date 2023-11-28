@@ -84,10 +84,16 @@ function Main() {
 
 	const sendValueToServer = async (value) => {
 		try {
+			const data = {
+            				id: id,
+            				pw: pw
+        			}
 			const response = await axios.post(
-				"https://3.35.153.170:8000/chat",
+				"https://3.35.153.170:8000/chat",JSON.stringfiy(data)
 				{
-					value: value,
+					headers: {
+          				  "Content-Type": `application/json`,
+        					  }
 				}
 			);
 			return response.data;
