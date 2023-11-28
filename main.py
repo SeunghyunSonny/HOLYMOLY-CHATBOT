@@ -1,7 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Union
-from llm import LocalLlm, Character, BaseMessage, HumanMessage  # 적절한 모듈 경로로 변경하세요
+from llm import LocalLlm, Character  # 적절한 모듈 경로로 변경하세요
 import asyncio
 
 app = FastAPI()
@@ -27,7 +27,7 @@ async def chat_endpoint(websocket: WebSocket):
     history = []  # 대화 기록을 저장하는 리스트
 
     # 캐릭터 객체 생성
-    character = Character(name="Chatbot", desc="AI Chatbot")
+    character = None
 
     async def callback_function(message):
         # 콜백 함수 구현 (예시)
