@@ -44,7 +44,7 @@ async def chat_endpoint(websocket: WebSocket):
                 user_input,
                 user_input_template,
                 callback=callback_function,  # 콜백 함수 사용
-                character=character
+                character=None
             )
 
             # 응답을 클라이언트에게 보냄
